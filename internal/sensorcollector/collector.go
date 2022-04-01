@@ -65,7 +65,10 @@ func (s *sensor) Consume(line string) error {
 		sensorVal := lines[2]
 
 		if sensorMonitor, ok := s.monitors[sensorName]; ok {
-			sensorMonitor.accept(s.reference, sensorVal)
+			err := sensorMonitor.accept(s.reference, sensorVal)
+			if err != nil {
+				return err
+			}
 		} else {
 			return errors.ErrUnknownSensor
 		}
