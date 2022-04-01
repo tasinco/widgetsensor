@@ -61,3 +61,59 @@ func TestCollectorReference(t *testing.T) {
 		})
 	}
 }
+
+func TestCollectorThermometer(t *testing.T) {
+	tests := []struct {
+		name   string
+		lines  []string
+		expErr []error
+	}{
+		{
+			name: "thermometer",
+			lines: []string{
+				"thermometer temp-1",
+				"2007-04-05T22:00 temp-1 72.4",
+			},
+			expErr: []error{nil, nil},
+		},
+		{
+			name: "thermometer invalid",
+			lines: []string{
+				"thermometer",
+			},
+			expErr: []error{errors.ErrInvalidLine},
+		},
+		{
+			name: "thermometer missing declaration",
+			lines: []string{
+				"2007-04-05T22:00 temp-1 72.4",
+			},
+			expErr: []error{errors.ErrUnknownSensor},
+		},
+		{
+			name: "thermometer invalid temp",
+			lines: []string{
+				"thermometer temp-1",
+				"2007-04-05T22:00 temp-1",
+			},
+			expErr: []error{nil, errors.ErrInvalidLine},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			sensorCollector := NewSensor()
+			assert.False(t, sensorCollector.(*sensor).reference.Valid())
+			err := sensorCollector.Consume("reference 1 2")
+			assert.NoError(t, err)
+			for cnt, line := range test.lines {
+				err := sensorCollector.Consume(line)
+				if test.expErr[cnt] == nil {
+					assert.NoError(t, err)
+				} else {
+					assert.Equal(t, test.expErr[cnt], err)
+				}
+			}
+		})
+	}
+}

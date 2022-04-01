@@ -12,20 +12,24 @@ type Sensor interface {
 
 func NewSensor() Sensor {
 	reference := &reference{}
+	thermometer := newThermometer()
 
 	handlers := map[string]handler{
-		"reference": reference,
+		"reference":   reference,
+		"thermometer": thermometer,
 	}
 
 	return &sensor{
-		handlers:  handlers,
-		reference: reference,
+		handlers:    handlers,
+		reference:   reference,
+		thermometer: thermometer,
 	}
 }
 
 type sensor struct {
-	handlers  map[string]handler
-	reference *reference
+	handlers    map[string]handler
+	reference   *reference
+	thermometer *thermometer
 }
 
 func (s *sensor) Consume(line string) error {
@@ -41,6 +45,20 @@ func (s *sensor) Consume(line string) error {
 		err := handler.consume(lines[1:])
 		if err != nil {
 			return err
+		}
+	} else {
+		if len(lines) < 3 {
+			return errors.ErrInvalidLine
+		}
+
+		sensorName := lines[1]
+		sensorVal := lines[2]
+
+		switch {
+		case s.thermometer.isSensor(sensorName):
+			s.thermometer.accept(sensorName, sensorVal)
+		default:
+			return errors.ErrUnknownSensor
 		}
 	}
 
