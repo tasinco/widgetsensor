@@ -74,14 +74,14 @@ func TestAccumulator(t *testing.T) {
 			assert.Equal(t, test.expBranding, accumulator.Precision(test.baseTemp))
 			assert.Equal(t, test.expDev, accumulator.stdDeviation)
 			assert.Equal(t, test.expMean, accumulator.mean)
-			stdDev := CalcSqrt(test.floats)
+			stdDev := calculateStdDeviation(test.floats)
 			delta := math.Abs(stdDev - accumulator.stdDeviation)
 			assert.True(t, delta < 0.0000001)
 		})
 	}
 }
 
-func CalcSqrt(fls []float64) float64 {
+func calculateStdDeviation(fls []float64) float64 {
 	var sum float64
 	for _, fl := range fls {
 		sum += fl
