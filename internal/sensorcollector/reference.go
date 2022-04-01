@@ -23,14 +23,14 @@ func (r reference) argLen() int {
 	return 2
 }
 
-func (r *reference) consume(lines []string) error {
+func (r *reference) consume(lines []string) (string, sensorMonitor, error) {
 	newThermometer, err := strconv.ParseFloat(lines[0], 64)
 	if err != nil {
-		return errors.ErrInvalidFloat
+		return "", nil, errors.ErrInvalidFloat
 	}
 	newHumidity, err := strconv.ParseFloat(lines[1], 64)
 	if err != nil {
-		return errors.ErrInvalidFloat
+		return "", nil, errors.ErrInvalidFloat
 	}
 
 	r.thermometer = newThermometer
@@ -42,7 +42,7 @@ func (r *reference) consume(lines []string) error {
 
 	r.valid = true
 
-	return nil
+	return "", nil, nil
 }
 
 func (r *reference) Valid() bool {

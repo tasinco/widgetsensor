@@ -5,13 +5,6 @@ import (
 	"testing"
 )
 
-func TestHumidity(t *testing.T) {
-	humidity := newHumidity()
-	assert.False(t, humidity.isSensor("sensor"))
-	humidity.consume([]string{"sensor"})
-	assert.True(t, humidity.isSensor("sensor"))
-}
-
 func TestHumidityDiscard(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -43,9 +36,9 @@ func TestHumidityDiscard(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			reference := &reference{}
 			reference.consume(test.reference)
-			humidity := newHumidity()
-			humidity.accept(reference, "sensor", test.humidityVal)
-			assert.Equal(t, test.expRes, humidity.Precision("sensor"))
+			humidity := &humiditySensorMonitor{}
+			humidity.accept(reference, test.humidityVal)
+			assert.Equal(t, test.expRes, humidity.Precision())
 		})
 	}
 }
