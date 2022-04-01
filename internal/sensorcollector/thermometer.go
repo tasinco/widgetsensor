@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"sync"
 )
 
 var (
@@ -14,6 +15,7 @@ var (
 )
 
 type accumulator struct {
+	lock         sync.RWMutex
 	count        int64
 	mean         float64
 	m2           float64
@@ -21,6 +23,8 @@ type accumulator struct {
 }
 
 func (a *accumulator) Precision(base float64) string {
+	a.lock.RLock()
+	defer a.lock.RUnlock()
 	sensorDeviation := math.Abs(base - a.mean)
 	stdDeviation := a.stdDeviation
 	if sensorDeviation < roomTempPrec {
@@ -39,6 +43,8 @@ func (a accumulator) String() string {
 }
 
 func (a *accumulator) accumulate(val float64) {
+	a.lock.Lock()
+	defer a.lock.Unlock()
 	// compute standard deviation on the fly
 	// from: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
 	a.count++

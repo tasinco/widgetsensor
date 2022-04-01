@@ -1,6 +1,8 @@
 package sensorcollector
 
 import (
+	"context"
+	"github.com/neilotoole/errgroup"
 	"strings"
 	"widgetsensor/internal/errors"
 )
@@ -9,12 +11,15 @@ type Sensor interface {
 	Consume(string) error
 	ReferenceValid() bool
 	Output(func(string))
+	Wait() error
 }
 
 func NewSensor() Sensor {
 	reference := &reference{}
 	thermometer := newThermometer()
 	humidity := newHumidity()
+
+	errg, _ := errgroup.WithContext(context.Background())
 
 	handlers := map[string]handler{
 		"reference":   reference,
@@ -28,6 +33,7 @@ func NewSensor() Sensor {
 		thermometer: thermometer,
 		humidity:    humidity,
 		monitors:    make(map[string]sensorMonitor),
+		errg:        errg,
 	}
 }
 
@@ -37,6 +43,7 @@ type sensor struct {
 	thermometer *thermometer
 	humidity    *humidity
 	monitors    map[string]sensorMonitor
+	errg        *errgroup.Group
 }
 
 func (s *sensor) Consume(line string) error {
@@ -65,16 +72,19 @@ func (s *sensor) Consume(line string) error {
 		sensorVal := lines[2]
 
 		if sensorMonitor, ok := s.monitors[sensorName]; ok {
-			err := sensorMonitor.accept(s.reference, sensorVal)
-			if err != nil {
-				return err
-			}
+			s.errg.Go(func() error {
+				return sensorMonitor.accept(s.reference, sensorVal)
+			})
 		} else {
 			return errors.ErrUnknownSensor
 		}
 	}
 
 	return nil
+}
+
+func (s *sensor) Wait() error {
+	return s.errg.Wait()
 }
 
 func (s *sensor) ReferenceValid() bool {

@@ -170,6 +170,8 @@ func TestCollectorHumidity(t *testing.T) {
 					assert.Equal(t, test.expErr[cnt], err)
 				}
 			}
+			err = sensorCollector.Wait()
+			assert.NoError(t, err)
 		})
 	}
 }
