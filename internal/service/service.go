@@ -2,6 +2,7 @@ package service
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -21,10 +22,13 @@ func (s *Service) Run() {
 			break
 		}
 		line := string(lineBytes[:len(lineBytes)-1])
-		log.Println(line)
 		sensorCollector.Consume(line)
 		if linecnt > 0 && !sensorCollector.ReferenceValid() {
 			log.Fatal("reference line missing")
 		}
 	}
+
+	sensorCollector.Output(func(s string) {
+		fmt.Println(s)
+	})
 }

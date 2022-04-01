@@ -96,3 +96,9 @@ func (t *thermometer) consume(lines []string) error {
 	}
 	return nil
 }
+
+func (t *thermometer) Output(reference *reference, out func(string)) {
+	for sensorName, accumulator := range t.monitors {
+		out(sensorName + ": " + accumulator.Precision(reference.thermometer))
+	}
+}

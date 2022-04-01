@@ -60,3 +60,9 @@ func (h *humidity) consume(lines []string) error {
 	}
 	return nil
 }
+
+func (h *humidity) Output(out func(string)) {
+	for sensorName, _ := range h.monitors {
+		out(sensorName + ": " + h.Precision(sensorName))
+	}
+}

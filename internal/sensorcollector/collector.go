@@ -8,6 +8,7 @@ import (
 type Sensor interface {
 	Consume(string) error
 	ReferenceValid() bool
+	Output(func(string))
 }
 
 func NewSensor() Sensor {
@@ -73,4 +74,9 @@ func (s *sensor) Consume(line string) error {
 
 func (s *sensor) ReferenceValid() bool {
 	return s.reference.Valid()
+}
+
+func (h *sensor) Output(out func(string)) {
+	h.thermometer.Output(h.reference, out)
+	h.humidity.Output(out)
 }
