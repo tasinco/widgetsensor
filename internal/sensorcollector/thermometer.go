@@ -48,8 +48,25 @@ func (a *accumulator) accumulate(val float64) {
 	a.stdDeviation = math.Sqrt(a.m2 / float64(a.count))
 }
 
+type thermometerSensorMonitor struct {
+	accumulator *accumulator
+}
+
+func (t *thermometerSensorMonitor) accept(_ *reference, val string) error {
+	thermometerValue, err := strconv.ParseFloat(val, 64)
+	if err != nil {
+		return err
+	}
+	t.accumulator.accumulate(thermometerValue)
+	return nil
+}
+
+func (t *thermometerSensorMonitor) Precision(base float64) string {
+	return t.accumulator.Precision(base)
+}
+
 type thermometer struct {
-	monitors map[string]*accumulator
+	monitors map[string]*thermometerSensorMonitor
 }
 
 func (t thermometer) String() string {
@@ -62,43 +79,26 @@ func (t thermometer) String() string {
 
 func newThermometer() *thermometer {
 	return &thermometer{
-		monitors: make(map[string]*accumulator),
+		monitors: make(map[string]*thermometerSensorMonitor),
 	}
-}
-
-func (t *thermometer) isSensor(sensorName string) bool {
-	_, ok := t.monitors[sensorName]
-	return ok
-}
-
-func (t *thermometer) accept(sensor string, val string) error {
-	thermometerValue, err := strconv.ParseFloat(val, 64)
-	if err != nil {
-		return err
-	}
-
-	accumulatorSensor, ok := t.monitors[sensor]
-	if !ok {
-		t.monitors[sensor] = &accumulator{}
-	}
-	accumulatorSensor.accumulate(thermometerValue)
-	return nil
 }
 
 func (t thermometer) argLen() int {
 	return 1
 }
 
-func (t *thermometer) consume(lines []string) error {
+func (t *thermometer) consume(lines []string) (string, sensorMonitor, error) {
 	sensorName := lines[0]
-	if _, ok := t.monitors[sensorName]; !ok {
-		t.monitors[sensorName] = &accumulator{}
+	curentMonitor, ok := t.monitors[sensorName]
+	if !ok {
+		curentMonitor = &thermometerSensorMonitor{accumulator: &accumulator{}}
+		t.monitors[sensorName] = curentMonitor
 	}
-	return nil
+	return sensorName, curentMonitor, nil
 }
 
 func (t *thermometer) Output(reference *reference, out func(string)) {
-	for sensorName, accumulator := range t.monitors {
-		out(sensorName + ": " + accumulator.Precision(reference.thermometer))
+	for sensorName, monitor := range t.monitors {
+		out(sensorName + ": " + monitor.Precision(reference.thermometer))
 	}
 }

@@ -27,6 +27,7 @@ func NewSensor() Sensor {
 		reference:   reference,
 		thermometer: thermometer,
 		humidity:    humidity,
+		monitors:    make(map[string]sensorMonitor),
 	}
 }
 
@@ -35,6 +36,7 @@ type sensor struct {
 	reference   *reference
 	thermometer *thermometer
 	humidity    *humidity
+	monitors    map[string]sensorMonitor
 }
 
 func (s *sensor) Consume(line string) error {
@@ -47,9 +49,12 @@ func (s *sensor) Consume(line string) error {
 		if len(lines) < handler.argLen()+1 {
 			return errors.ErrInvalidLine
 		}
-		err := handler.consume(lines[1:])
+		sensorName, sensorMonitor, err := handler.consume(lines[1:])
 		if err != nil {
 			return err
+		}
+		if sensorMonitor != nil {
+			s.monitors[sensorName] = sensorMonitor
 		}
 	} else {
 		if len(lines) < 3 {
@@ -59,12 +64,12 @@ func (s *sensor) Consume(line string) error {
 		sensorName := lines[1]
 		sensorVal := lines[2]
 
-		switch {
-		case s.thermometer.isSensor(sensorName):
-			s.thermometer.accept(sensorName, sensorVal)
-		case s.humidity.isSensor(sensorName):
-			s.humidity.accept(s.reference, sensorName, sensorVal)
-		default:
+		if sensorMonitor, ok := s.monitors[sensorName]; ok {
+			err := sensorMonitor.accept(s.reference, sensorVal)
+			if err != nil {
+				return err
+			}
+		} else {
 			return errors.ErrUnknownSensor
 		}
 	}

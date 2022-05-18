@@ -6,13 +6,6 @@ import (
 	"testing"
 )
 
-func TestThermometer(t *testing.T) {
-	thermometer := newThermometer()
-	assert.False(t, thermometer.isSensor("sensor"))
-	thermometer.consume([]string{"sensor"})
-	assert.True(t, thermometer.isSensor("sensor"))
-}
-
 func TestAccumulator(t *testing.T) {
 	tests := []struct {
 		name        string
