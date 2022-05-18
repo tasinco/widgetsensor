@@ -4,13 +4,17 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"sync"
 )
 
 type humiditySensorMonitor struct {
-	res bool
+	lock sync.RWMutex
+	res  bool
 }
 
 func (h *humiditySensorMonitor) Precision() string {
+	h.lock.RLock()
+	defer h.lock.RUnlock()
 	if h.res {
 		return "discarded"
 	}
@@ -22,6 +26,8 @@ func (h *humiditySensorMonitor) accept(reference *reference, val string) error {
 	if err != nil {
 		return err
 	}
+	h.lock.Lock()
+	defer h.lock.Unlock()
 	if humidity > reference.humidityMax || humidity < reference.humidityMin {
 		h.res = true
 	}
@@ -35,7 +41,7 @@ type humidity struct {
 func (h humidity) String() string {
 	b := bytes.Buffer{}
 	for k, v := range h.monitors {
-		b.WriteString(fmt.Sprintf("%s: %t; ", k, v))
+		b.WriteString(fmt.Sprintf("%s: %s; ", k, v.Precision()))
 	}
 	return b.String()
 }

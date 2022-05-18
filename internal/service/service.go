@@ -28,6 +28,11 @@ func (s *Service) Run() {
 		}
 	}
 
+	err := sensorCollector.Wait()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	sensorCollector.Output(func(s string) {
 		fmt.Println(s)
 	})
